@@ -1,0 +1,131 @@
+Protocols:
+
+- A protocol defines a blueprint of methods, properties, and other requirements that suit a particular task or piece of functionality.
+
+Some Built-in protocols: Identifiable, Equatable, etc.
+
+// example protocol definition
+
+protocol PetableAnimal {
+	var name: String { get set }
+	var ownerName: String { get }
+	var emoji: String { get }
+
+	func play()
+	func protect()
+}
+
+- while defining protocol, we define the blueprint of function and paramters, and not the actual implementation.
+- whoever confirms to this protocol needs to define implementation of the blueprints. 
+- We can define the default implementation of blueprints, in the protocol extension itself, so incase the confirming class doesn't implement anything, the default implementation will be getting executed.
+
+
+
+
+Communication Patterns in iOS:
+- Delegate Protocol: One to One communication
+- Notification & Observers: One to many communication
+
+
+
+Delegate Protocol Pattern:
+- It setups one to one communication between views.
+
+Delegate: it is like seating back and waiting to be told when and what to do. Some Boss will be telling delegate to do the job.
+
+//code for delegate protocol
+
+protocol ProductSelectionDelegate {
+	func didSelectProduct(name: String, imageName: String)
+}
+
+class ProductSelectionVC: UIViewController {
+	var delegate: ProductSelectionDelegate?
+
+	func userSelectedSomeProduct() {
+		delegate?.didSelectProduct(name: productName, imageName: productImage)
+	}
+}
+
+class ViewController: UIViewController, ProductSelectionDelegate {
+	func didSelectProduct(name: String, imageName: String) {
+		//do something with data received
+	}
+
+	func navigateToProductSelectionVC() {
+		let destinationVc = ProductSelectionVC()
+		destinationVc.delegate = self
+		destinationVc.presentationStyle = .pageSheet
+		present(destinationVc, animated: true)
+	}
+}
+
+
+- Here ViewController is delegate, and it will implement the functions of protocol. and ProductSelectionVC is the boss. Which will tell the delegate to do some job. 
+- destinationVc.delegate = self, with this line ViewController told ProductSelectionVC, that it will be listening to all the orders coming from ProductSelectionVC.
+
+
+
+
+Notification & Observer:
+- One to many communication in swift
+- Observer is same as delegate, it is just seating back and waiting to be told when and what to do.
+- NotificationCenter is the boss here, which will tell the observers to do things through notification.
+
+//example with code (will take the same example above)
+
+/* define notification names raw strings globally */
+let lightNotificationKey = "com.company.lightSide"
+let darkNotificationKey = "com.company.darkSide"
+
+class ProductSelectionVC: UIViewController {
+
+	func userSelectedLightProduct() {
+		let name = Notification.Name(rawValue: lightNotificationKey)
+		NotificationCenter.default.post(name: name, object: nil)
+		/* posting a notification on click, with a notification name. those who are observing this name, will do something after this post. we can pass extra information in the object or userInfo */
+	}
+
+	func userSelectedDarkProduct() {
+		let name = Notification.Name(rawValue: darkNotificationKey)
+		NotificationCenter.default.post(name: name, object: nil)
+	}
+}
+
+class ViewController: UIViewController {
+	
+	let light = Notification.Name(rawValue: lightNotificationKey)
+	let dark = Notification.Name(rawValue: darkNotificationKey)
+
+	let uiLabeltext: String?
+
+	deinit() {
+		/* it is important to remove observers while deinit else it will be causing memory leaks as well as unexpected behaviour due to it's observing.  */
+		NotificationCenter.default.removeObserver(self)
+	}
+
+	ovveride func viewDidLoad() {
+		super.viewDidLoad()
+		createObservers()
+	}
+
+	func createObservers() {
+		//light
+		NotificationCenter.default.addObserver(self, selector: #selector(updateLightText(notification:)), name: light, object: nil)
+
+		//dark
+		NotificationCenter.default.addObserver(self, selector: #selector(updateDarkText(notification:)), name: light, object: nil)
+	}
+
+	func updateLightText(notification: NSNotification) {
+		uiLabelText = "light"
+	}
+
+	func updateDarkText(notification: NSNotification) {
+		uiLabelText = "dark"
+	}
+
+}
+
+
+

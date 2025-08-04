@@ -1,0 +1,289 @@
+Auto Layout in iOS:
+- Instead of positioning UI elements using fixed coordinates, Auto Layout lets you define rules (constraints) that describe how views relate to each other.
+
+//example with code
+
+lazy var myButton: UIButton = {
+	let button = UIButton(type: .system)
+	button.setTitle("Tap Me", for: .normal)
+	button.setTitleColor(.white, for: .normal)
+	button.backgroundColor = .systemBlue
+	button.layer.cornerRadius = 10
+	button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
+	return button
+}()
+
+override viewDidLoad() {
+	super.viewDidLoad()
+
+	view.addSubview(myButton)
+
+	// Disable autoresizing mask 
+    myButton.translatesAutoresizingMaskIntoConstraints = false
+    /*basically when we create views programatically, it is set to true by default, means when it will get added to view, it will have some constraint by defualt. It will be placed randonly somewhere. by setting false, we are saying to not give any default constraint to it.*/
+
+    // Add constraints
+    NSLayoutConstraint.activate([
+        myButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+        myButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 100),
+        myButton.widthAnchor.constraint(equalToConstant: 150),
+        myButton.heightAnchor.constraint(equalToConstant: 50)
+    ])
+}
+
+Terminologies:
+- Intrinsic Content Size: 
+	- The "natural" size of a view based on its content.
+	- Example: A UILabel will size itself to fit its text.
+- Content Hugging & Compression Resistance:
+	- Content Hugging: Resists growing larger than intrinsic size.
+	- Compression Resistance: Resists shrinking smaller than intrinsic size.
+- Priority:
+	- Every constraint has a priority (1–1000).
+	- Conflicts between constraints are resolved using priority.
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+UITableView and UICollectionView:
+
+UITableView:
+	- UITableViewCell: Represents a single row. Reused for performance.
+	- DataSource: Provides the data (how many rows, what to show in each).
+	- Delegate: Handles behavior, like row selection, height, editing, etc.
+
+//code 
+class MyViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+    
+    let tableView: UITableView = {
+	    let tableView = UITableView(frame: .zero, style: .grouped)
+	    tableView.separatorStyle = .none
+	    tableView.showsVerticalScrollIndicator = false
+	    tableView.backgroundColor = .clear
+	    return tableView
+	}()
+
+    let data = ["Apple", "Banana", "Orange"]
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // Set up table view
+        tableView.frame = view.bounds
+        view.addSubview(tableView)
+        
+        // Register a cell class
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        
+        // Set delegates
+        tableView.dataSource = self
+        tableView.delegate = self
+    }
+
+    // MARK: - Data Source Methods
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return data.count
+    }
+
+    func tableView(_ tableView: UITableView,
+                   cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        cell.textLabel?.text = data[indexPath.row]
+        return cell
+    }
+
+    // MARK: - Delegate Methods
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        print("Selected: \(data[indexPath.row])")
+    }
+}
+
+
+- UITableView.style: 
+	- grouped: Sections appear grouped with rounded corners. Section Headers Not sticky by default.
+	- plain: Simple list, no section spacing. Section Headers stay at top when scrolling(sticky).
+
+
+
+
+UICollectionView:
+	- Can scroll vertically or horizontally
+	- Uses cells and supplementary views (e.g., headers/footers)
+	- Backed by a layout (UICollectionViewLayout)
+
+//code
+class MyViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+    
+    var collectionView: UICollectionView!
+    let items = ["A", "B", "C", "D"]
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // Layout
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        layout.itemSize = CGSize(width: 100, height: 100)
+
+        // Collection View
+        collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: layout)
+        collectionView.backgroundColor = .white
+        collectionView.dataSource = self
+        collectionView.delegate = self
+        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "cell")
+        
+        view.addSubview(collectionView)
+    }
+
+    // MARK: Data Source
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return items.count
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath)
+        cell.backgroundColor = .systemBlue
+        return cell
+    }
+
+    //MARK: Delegates
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+	    print("Selected item at \(indexPath)")
+	}
+
+	func collectionView(_ collectionView: UICollectionView,
+                    layout collectionViewLayout: UICollectionViewLayout,
+                    sizeForItemAt indexPath: IndexPath) -> CGSize {
+	    return CGSize(width: 100, height: 100)
+	}
+}
+
+
+////////////////////////////
+UIImage, UIStack
+
+let stackView = UIStackView()
+stackView.axis = .vertical       // or .horizontal
+stackView.spacing = 10
+stackView.distribution = .fillEqually
+stackView.alignment = .center
+stackView.translatesAutoresizingMaskIntoConstraints = false
+
+let label = UILabel()
+label.text = "Hello"
+
+let imageView = UIImageView(image: UIImage(named: "icon"))
+imageView.contentMode = .scaleAspectFit
+imageView.heightAnchor.constraint(equalToConstant: 80).isActive = true
+imageView.widthAnchor.constraint(equalToConstant: 80).isActive = true
+
+
+stackView.addArrangedSubview(label)
+stackView.addArrangedSubview(imageView)
+
+view.addSubview(stackView)
+
+NSLayoutConstraint.activate([
+    stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+    stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+])
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+Navigation Controllers, Modal Presentation:
+//basic usage
+let rootVC = HomeViewController()
+let navController = UINavigationController(rootViewController: rootVC)
+window.rootViewController = navController
+//push a viewcontroller
+let detailVC = DetailViewController()
+navigationController?.pushViewController(detailVC, animated: true)
+//pop a viewcontroller
+navigationController?.popViewController(animated: true)
+
+Modal Presentation:
+//present a viewcontroller
+let modalVC = ModalViewController()
+modalVC.modalPresentationStyle = .fullScreen
+present(modalVC, animated: true)
+//dismiss a modal
+dismiss(animated: true, completion: nil)
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+Gesture in UIKit:
+
+Tap gesture:
+//code
+let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+view.addGestureRecognizer(tapGesture)
+
+@objc func handleTap(_ sender: UITapGestureRecognizer) {
+    print("View tapped!")
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+ViewController LifeCycle:
+
+init() : Called when the view controller is initialized.
+ ↓
+loadView() : Loads or creates the view hierarchy. Override only if you're creating views programmatically.
+ ↓
+viewDidLoad() : Called after the view is loaded into memory.
+ ↓
+viewWillAppear() : Called before the view appears on screen.
+ ↓
+viewWillLayoutSubviews() : Called before laying out subviews.
+ ↓
+viewDidLayoutSubviews() : Called after laying out subviews.
+ ↓
+viewDidAppear() : Called after the view appears on screen.
+ ↓
+(view visible and interactive)
+ ↓
+viewWillDisappear() : Called before the view disappears.
+ ↓
+viewDidDisappear() : Called after the view disappears. 
+ ↓
+deinit : Called when the view controller is deallocated.
+
+
+
+App LifeCycle:
+
+[Launch] → Not Running
+         ↓
+ didFinishLaunching
+         ↓
+willEnterForeground
+         ↓
+didBecomeActive → [Active]
+         ↓
+ (Interruption or Home Button)
+         ↓
+willResignActive
+         ↓
+didEnterBackground → [Background or Suspended]
+         ↓
+ (Reopen App)
+         ↓
+willEnterForeground
+         ↓
+didBecomeActive
+
+
+- Earlier these functions used to be in appDelegate.
+- After introduction of sceneDelegate, these get moved to sceneDelegate.
+

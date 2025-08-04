@@ -1,0 +1,129 @@
+Generics:
+- It enable the creation of flexible, reusable, and type-safe code. 
+- It allows functions, classes, structs, & enums to work with various types 
+- It checks type of input values at compilation, if it mismatch, throws error in compilation.
+
+Generics usage:
+- Generic Functions:
+    func swapTwoValues<T>(_ a: T, _ b: T) {}
+
+- Generic Types:
+    struct Stack<Element> {
+        var items = [Element]()
+        mutating func push(_ item: Element) {
+            items.append(item)
+        }
+    }
+
+- Type Constraints:
+    func findIndex<T: Equatable>(of valueToFind: T, in array: [T]) -> Int? {}
+
+- Associated Types in Protocols:
+    - Protocols can define associated types, which act as placeholders for types that a conforming type must specify. This allows for more abstract and flexible protocol definitions.
+
+    protocol Container {
+        associatedtype Item
+        mutating func append(_ item: Item)
+        var count: Int { get }
+        subscript(i: Int) -> Item { get }
+    }
+
+
+where Clause with Generics:
+- where clause provides facility to add wide range of constraints to generic types
+
+//code for where clause
+func areEqual<T>(a: T, b: T) -> Bool where T: Equatable {
+    return a == b
+}
+
+//another example 
+protocol Container {
+    associatedtype Item
+    var items: [Item] { get }
+}
+
+/* This function will be available to use only when all the specified conditions meet*/
+func compareContainers<C1, C2>(
+    _ c1: C1, _ c2: C2
+) -> Bool where
+    C1: Container,
+    C2: Container,
+    C1.Item == C2.Item,
+    C1.Item: Equatable
+{
+    return c1.items == c2.items
+}
+
+where clause with internal function of protocols:
+
+extension Container {
+    /* only accessible when Item confirms to Equatable */
+    func endsWith(_ item: Item) -> Bool where Item: Equatable { 
+        return count >= 1 && self[count-1] == item
+    }
+}
+
+where Clause with Extensions:
+
+/* Only arrays whose elements conform to Comparable will get this method */
+extension Array where Element: Comparable {
+    func sortedArray() -> [Element] {
+        return self.sorted()
+    }
+}
+
+
+
+opaque type:
+- opaque type is a way to return a value of some type that conforms to a protocol without exposing the specific underlying type to the caller
+- This is done using the "some" keyword.
+
+//example with code
+
+protocol Animal {
+    func makeSound()
+}
+
+struct Dog: Animal {
+    func makeSound() {
+        print("Woof!")
+    }
+}
+
+func getAnimal() -> some Animal {
+    return Dog()
+}
+
+- You can't tell from outside that it's returning a Dog, only that it's some Animal.
+- You can tell the type as Animal, but not the specific animal.
+- why it was introduced if we already have Any keyword? -> First we can know some type of returned value, secondly the compiler knows the concrete type at compile time, whereas for any type, the actual type is unknown till runtime, that's why opaque type is slightly faster than existential type. 
+- in opaque type, compiler knows the exact conctrete type but it doesn't return it outside the function to the caller.
+- example of use case: https://www.youtube.com/watch?v=SPhATsEQR74
+
+
+Existential/Boxed type (Any keyword):
+- with "Any" keyword, we can't tell anything about the type returned
+
+//example with code
+
+protocol Animal {
+    func makeSound()
+}
+
+struct Dog: Animal {
+    func makeSound() {
+        print("Woof!")
+    }
+}
+
+func getAnimal() -> Any Animal {
+    return Dog()
+}
+
+- Can't tell anything about the return type.
+
+
+
+
+

@@ -1,0 +1,194 @@
+Animations:
+
+Types of animations:
+- Core Animation:
+	- it is not user intractive, it is designed for visual polish only. ie. when executed, animation will start and end, in between it will not stop, depending on user's touch.
+	- It mostly used with CALayer of view
+
+
+
+
+
+Components of Core Animation:
+- CALayer:
+	- Every UIView has an associated CALayer.
+	- Animations are applied to CALayer objects.
+	- CALayer has properties like position, opacity, transform, bounds, backgroundColor, etc., that can be animated.
+- Explicit Animations: we use CABasicAnimation, CAKeyframeAnimation, or CAAnimationGroup for fine-grained control.
+
+CABasicAnimation:
+- Animates a single property between a start and end value.
+
+let fade = CABasicAnimation(keyPath: "opacity")
+fade.fromValue = 1.0
+fade.toValue = 0.0
+fade.duration = 1.0
+myLayer.add(fade, forKey: "fade")
+
+
+CAKeyframeAnimation:
+- Allows more complex animations along a path or multiple keyframes.
+
+let animation = CAKeyframeAnimation(keyPath: "position")
+animation.values = [startPoint, midPoint, endPoint]
+animation.keyTimes = [0, 0.5, 1]
+animation.duration = 2.0
+myLayer.add(animation, forKey: "move")
+
+
+CAAnimationGroup:
+- Groups multiple animations to run concurrently.
+
+let move = CABasicAnimation(keyPath: "position")
+let fade = CABasicAnimation(keyPath: "opacity")
+let group = CAAnimationGroup()
+group.animations = [move, fade]
+group.duration = 1.5
+myLayer.add(group, forKey: "moveAndFade")
+
+
+- We can Customize animation pacing using CAMediaTimingFunction:
+animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+
+- Use removeOnCompletion = false and fillMode = .forwards if we want the animation to persist visually.
+
+
+
+
+
+CALayer:
+- An object that manages image-based content and allows you to perform animations on that content.
+
+various available transforms available to be applied to any layer:
+- 3D transforms: using CATransform3D
+	- how to use CATransform3D to apply rotation, scaling, and translation transforms on a CALayer.
+
+//code 
+import UIKit
+
+class TransformViewController: UIViewController {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .white
+
+        // Create a custom CALayer
+        let customLayer = CALayer()
+        customLayer.frame = CGRect(x: 100, y: 100, width: 100, height: 100)
+        customLayer.backgroundColor = UIColor.systemBlue.cgColor
+        view.layer.addSublayer(customLayer)
+
+        // Apply 3D Transform: Rotate, Scale, and Translate
+        var transform = CATransform3DIdentity
+
+        // 1. Translate (move right & down)
+        transform = CATransform3DTranslate(transform, 50, 50, 0)
+
+        // 2. Rotate 45 degrees around Z-axis
+        transform = CATransform3DRotate(transform, CGFloat.pi / 4, 0, 0, 1)
+
+        // 3. Scale (shrink)
+        transform = CATransform3DScale(transform, 0.8, 0.8, 1)
+
+        // Apply the transform to the layer
+        customLayer.transform = transform
+    }
+}
+
+Explaination:
+
+CATransform3DIdentity: Starts with a neutral transform (no changes).
+CATransform3DTranslate: Moves the layer in x, y, or z directions.
+CATransform3DRotate: Rotates around an axis. (Z-axis = 2D rotation).
+CATransform3DScale: Scales the layer’s size.
+
+
+- 2D transforms: using affineTransform() (affine means 2D)
+
+//code	
+import UIKit
+
+let myLayer = CALayer()
+myLayer.frame = CGRect(x: 50, y: 50, width: 100, height: 100)
+myLayer.backgroundColor = UIColor.blue.cgColor
+
+// Rotate the layer by 45 degrees (π/4 radians)
+let rotation = CGAffineTransform(rotationAngle: .pi / 4)
+myLayer.setAffineTransform(rotation)
+
+
+
+
+
+
+
+UIBezierPath():
+It’s part of UIKit and is used to:
+- Draw lines, circles, rectangles, curves, etc.
+- Create clipping paths
+- Build shape layers for animations or masking
+- Perform hit-testing and stroke/fill operations
+
+
+
+//example with code
+
+let path = UIBezierPath(ovalIn: CGRect(x: 50, y: 50, width: 100, height: 100))
+UIColor.red.setFill()
+path.fill()
+//This creates and fills a red circle.
+
+
+let roundRect = UIBezierPath(roundedRect: CGRect(x: 10, y: 70, width: 100, height: 50), cornerRadius: 10)
+roundRect.stroke()
+//Rounded rectangle
+
+
+let linePath = UIBezierPath()
+linePath.move(to: CGPoint(x: 0, y: 0))
+linePath.addLine(to: CGPoint(x: 100, y: 100))
+linePath.lineWidth = 2
+UIColor.black.setStroke()
+linePath.stroke()
+//Line
+
+
+//How to use UIBeizer in View: to draw in views
+- by ovveriding the draw function.
+
+class MyView: UIView {
+    override func draw(_ rect: CGRect) {
+        let path = UIBezierPath(ovalIn: rect.insetBy(dx: 10, dy: 10))
+        UIColor.blue.setFill()
+        path.fill()
+    }
+}
+
+
+
+
+
+
+
+//CAShapeLayer:
+we use UIBezierPath with CAShapeLayer for animations.
+
+
+let shapeLayer = CAShapeLayer()
+// this UIBezierPath creates a circular arc.
+shapeLayer.path = UIBezierPath(arcCenter: view.center, radius:150, startAngle: 0, endAngle: .pi * 2, clockwise:true).cgPath
+shapeLayer.strokeColor = UIColor.red.cgColor
+shapeLayer.fillColor = UIColor.clear.cgColor
+shapeLayer.lineWidth = 5
+shapeLayer.strokeEnd = 0
+
+view.layer.addSublayer(shapeLayer)
+
+// code to add animation
+let animation = CABasicAnimation(keyPath: "strokeEnd")
+animation.toValue = 1
+animation.duration = 3
+shape.add(animation, forKey: "animation")
+
+
+

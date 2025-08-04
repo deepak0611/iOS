@@ -1,0 +1,18 @@
+Objective-C
+
+File Extensions in Objective-C:
+- .h -> Header/Interface file
+- .m -> Objective-C Implementation file
+- .mm -> Objective-C++ Implementation file
+
+- .h: This is the file extension for a header file. Just like in C, header files contain the declarations of classes, methods, and properties. They serve as the public interface for a class, telling other parts of the program what functions and data are available.
+
+- .m: This is the file extension for an implementation file. The .m stands for "methods" and contains the actual implementation of the methods declared in the corresponding .h header file. This is where you write the logic for your Objective-C classes.
+
+- .mm: This file extension is used for Objective-C++ implementation files. It signifies that the file can contain a mix of Objective-C and C++ code. This is essential for projects that need to interoperate with C++ libraries or frameworks.
+
+
+
+
+Bridging to Objective-C:
+//don't have much context as of now.

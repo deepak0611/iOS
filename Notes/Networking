@@ -1,0 +1,148 @@
+Codable and Json Parsing:
+Codable is a type alias for two protocols: 
+	- typealias Codable = Decodable & Encodable
+	- Encodable: Allows a type to be encoded into JSON (or other formats)
+	- Decodable: Allows a type to be decoded from JSON
+
+//code
+struct User: Codable {
+    let id: Int
+    let name: String
+    let isActive: Bool
+}
+
+//Decoding
+
+let jsonData = """
+{
+  "id": 1,
+  "name": "John Doe",
+  "isActive": true
+}
+""".data(using: .utf8)!
+
+do {
+    let user = try JSONDecoder().decode(User.self, from: jsonData)
+    print(user.name)  // Output: John Doe
+} catch {
+    print("Decoding failed: \(error)")
+}
+
+//Encoding
+
+let user = User(id: 1, name: "John", isActive: true)
+
+do {
+    let jsonData = try JSONEncoder().encode(user)
+    if let jsonString = String(data: jsonData, encoding: .utf8) {
+        print(jsonString)
+    }
+} catch {
+    print("Encoding failed: \(error)")
+}
+
+Handling Key Mismatches with CodingKeys:
+- If JSON uses keys like user_id, you can map them:
+
+//json
+{
+  "user_id": 1,
+  "user_name": "John"
+}
+
+//siwft model
+struct User: Codable {
+    let id: Int
+    let name: String
+
+    enum CodingKeys: String, CodingKey {
+        case id = "user_id"
+        case name = "user_name"
+    }
+}
+
+
+
+
+URLSession:
+- URLSession is the primary API used for networking tasks like making GET/POST requests, downloading files, and uploading data.
+- It’s flexible and works with both sync-like and async (completion handler or async/await) styles.
+
+//GET Request Example (Fetch data from a API)
+
+func fetchUsers() {
+    let url = URL(string: "https://jsonplaceholder.typicode.com/users")!
+
+    let task = URLSession.shared.dataTask(with: url) { data, response, error in
+        if let error = error {
+            print("Error:", error)
+            return
+        }
+
+        guard let data = data else { return }
+
+        do {
+            let users = try JSONDecoder().decode([User].self, from: data)
+            print(users)
+        } catch {
+            print("Decoding error:", error)
+        }
+    }
+
+    task.resume()
+}
+
+// POST Request Example (Send JSON data to a server)
+
+struct NewUser: Codable {
+    let name: String
+    let email: String
+}
+
+func createUser() {
+    let url = URL(string: "https://jsonplaceholder.typicode.com/users")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+    let user = NewUser(name: "Alice", email: "alice@example.com")
+    request.httpBody = try? JSONEncoder().encode(user)
+
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error:", error)
+            return
+        }
+
+        guard let data = data else { return }
+
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("Response:", responseString)
+        }
+    }
+
+    task.resume()
+}
+
+
+//Using async/await (iOS 15+)
+
+func fetchUsersAsync() async {
+    let url = URL(string: "https://jsonplaceholder.typicode.com/users")!
+
+    do {
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let users = try JSONDecoder().decode([User].self, from: data)
+        print(users)
+    } catch {
+        print("Async error:", error)
+    }
+}
+
+
+
+
+
+
+
+

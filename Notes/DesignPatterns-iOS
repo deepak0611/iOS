@@ -1,0 +1,162 @@
+Design Patterns:
+- Design patterns are reusable solutions to common problems in software design. 
+- They’re templates designed to help us write code that’s easy to understand and reuse.
+
+
+MVVM: (related to project structure, ie. architecture)
+- Improves testability and separation by introducing a ViewModel between the View and Model.
+- Components:
+	- Model: Data/business logic
+	- ViewModel: Prepares data for display (binds model → view)
+	- View: Displays UI, observes ViewModel
+
+
+
+Factory Pattern: (related to object initialisation)
+- used when we need to creates objects without exposing the creation logic.
+- used wherever switch statements are going to be used on some type or value, to create objects. Basically when the creates objects are going to be similar in some way, or share some part of their property values.
+
+public class AnnotationFactory {
+	public func createBusinessMapModel(for business: YLPBusiness) -> BusinessMapModel? {
+		guard let yelpCoordinate = business.location.coordinate else {
+			return nil
+		}
+		let coordinate = CLLocationCoordinate2D(latitude: yelpCoordinate.latitude, longitude: yelpCoordinate.longitude)
+
+		let name = business.name
+		let rating = business.rating
+		let image: UIImage
+
+		switch rating {
+			case 0.0..<3.0:
+				image = UIImage(named: "terrible")!
+			case 3.0..<4.0:
+				image = UIImage(named: "bad")!
+			case 4.0..<5.0:
+				image = UIImage(named: "good")!
+			default:
+				image = UIImage(named: "bad")!
+		}
+
+		return BusinessMapModel(coordinate: coordinate, image: image, name: name, rating: rating)
+	}
+}
+
+
+Singleton: (related to object initialisation)
+- Singleton ensures that only one object of its kind exists.
+- provides a single point of access to it for any other code.
+
+//code
+class NetworkManager {
+	static let shared = NetwrokManager(baseUrl: APIConstants.baseUrl)
+
+	let baseUrl: URL
+
+	private init(baseUrl: URL) {
+		self.baseUrl = baseUrl
+	}
+}
+
+
+Builder Pattern: (related to object initialisation)
+- used to build complex objects step by step.
+- Common in:
+	- Building custom views
+	- Network requests
+- Here we make functions in a way that it returns Self.
+
+//example with code
+public LegoText {
+	
+	init() {}
+
+    @discardableResult
+    func legoForegroundColor(_ color: CGColor?) -> Self {
+        self.configuration.foregroundColor = color
+        return self
+    }
+
+    @discardableResult
+    func legoBackgroundColor(_ color: CGColor?) -> Self {
+        self.configuration.backgroundColor = color
+        return self
+    }
+}
+
+let legoText = LegoText()
+				.legoForegroundColor(UIColor.red.cgColor)
+				.legoBackgroundColor(UIColor.blue.cgColor)
+
+
+
+
+Coordinator Pattern: (related to navigation in the app)
+- It creates abstraction among classes, such that no view knows from where they are getting initialised and on tap of something where it will go.
+- all the navigation logics are written inside the coordinator. and view only calls the function from the coordinator to navigate.
+
+
+//setting up rootCoordinator
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    guard let windowScene = (scene as? UIWindowScene) else {
+        return
+    }
+    
+    /// make sure to remove "Storyboard" item from info plist
+    let appWindow = UIWindow(frame: windowScene.coordinateSpace.bounds)
+    appWindow.windowScene = windowScene
+    
+    let navigationController = UINavigationController()
+    navigationController.setNavigationBarHidden(true, animated: false)
+    let coordinator = RootCoordinator(navigationController: navigationController)
+    
+    // An instance of RootCoordinator takes control of the app flow
+    coordinator.start(animated: false)
+    
+    appWindow.rootViewController = navigationController
+    appWindow.makeKeyAndVisible()
+    
+    window = appWindow
+}
+
+
+final class RootCoordinator: NSObject, Coordinator, ParentCoordinator {
+    var childCoordinators = [Coordinator]()
+    var navigationController: UINavigationController
+    /// A reference to `BaseTabBarController` to hide its navigation controller after dismissing Auth screens
+    var baseTabBarController: BaseTabBarController?
+    
+    init(navigationController: UINavigationController) {
+        self.navigationController = navigationController
+    }
+    
+    func start(animated: Bool) {
+        baseTabBarController = BaseTabBarController(coordinator: self)
+        baseTabBarController!.coordinator = self
+        navigationController.pushViewController(baseTabBarController!, animated: animated)
+    }
+}
+
+
+
+Class LoginCoordinator {
+
+func start(animated: Bool) {
+    let loginViewController = LoginViewController()
+    viewControllerRef = loginViewController
+    loginViewController.coordinator = self
+    navigationController.pushViewController(viewController: loginViewController)
+}
+
+func moveToPurchaseFlow() {
+	/* loginScreen will not know what viewController is going to be opened since it's logic is written in it's coordinator */
+	Let vc = PurchaseViewController()
+	navigationController.pushViewController(viewController: loginViewController)
+}
+
+}
+
+
+
+
+

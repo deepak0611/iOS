@@ -1,0 +1,105 @@
+Initialisers:
+- In Swift, initializers (init) are special methods used to set up an instance of a class, struct, or enum.
+
+1.Designated Initializer:
+- The primary initializer for a class or struct. It initializes all properties introduced by that type.
+class Person {
+    var name: String
+    var age: Int
+
+    init(name: String, age: Int) {
+        self.name = name
+        self.age = age
+    }
+}
+
+2.Convenience Initializer:
+- A secondary initializer that must call a designated initializer from the same class. It's used for default values or simplified setup.
+
+class Person {
+    var name: String
+    var age: Int
+
+    init(name: String, age: Int) {
+        self.name = name
+        self.age = age
+    }
+
+    convenience init(name: String) {
+        self.init(name: name, age: 18)
+    }
+}
+
+
+3.Required Initializer:
+- Ensures that all subclasses implement the initializer.
+
+//Example 1
+class Animal {
+    required init() {
+        print("Animal initialized")
+    }
+}
+
+class Dog: Animal {
+    required init() {
+        print("Dog initialized")
+    }
+}
+
+//Example 2
+protocol AnimalProtocol {
+	init() {}
+}
+
+class Dog: AnimalProtocol {
+	// Must mark this as required because:
+    // - the protocol requires it
+    // - Car might be subclassed
+	required init() {
+		print("dog initialisation")
+	}
+}
+
+
+4. Failable Initializer (init?)
+- Can return nil if initialization fails (e.g., invalid data).
+
+struct User {
+    let username: String
+
+    init?(username: String) {
+        if username.isEmpty { return nil }
+        self.username = username
+    }
+}
+
+5. Default Memberwise Initializer (Structs Only)
+- Automatically created if you don’t write any custom initializers.
+
+struct Point {
+    var x: Int
+    var y: Int
+}
+
+let p = Point(x: 3, y: 4)  // Auto-generated initializer
+
+
+7. Initializer Inheritance (Classes Only)
+- Subclasses don’t automatically inherit initializers unless:
+	- All stored properties have default values.
+	- You don't define any designated initializer.
+
+8. Deinitializer (deinit)
+- Not technically an initializer, but used for cleanup before an instance is deallocated (classes only).
+
+class FileHandler {
+    init() {
+        print("File opened")
+    }
+
+    deinit {
+        print("File closed")
+    }
+}
+

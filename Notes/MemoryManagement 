@@ -1,0 +1,85 @@
+Memory Management in iOS
+
+- Major topics include -> Automatic Reference Counting(ARC), different memory reference types, Retain Cycles, Memory Leaks
+
+Memory Leaks:
+- A memory leak in iOS (or any application) occurs when your app allocates memory that is never released
+- It causes the app's memory usage to grow unnecessarily over time
+- Common Causes of Memory Leaks in iOS:
+	- Strong reference cycles (retain cycles)
+	- Not releasing system resources properly 
+		- Failing to release file handles, observers, timers, or sockets.
+		- Fix: Remove observers in deinit, invalidate timers, etc.
+	- Caching too much data
+	- Incorrect use of third-party libraries
+		- Libraries that don't manage memory correctly can leak memory if not used properly.
+- Tools to Detect Memory Leaks in iOS:
+	- Xcode Instruments – Leaks and Allocations: Helps track memory usage and find leaks.
+	- Xcode Debug Memory Graph: Shows object references and retain cycles visually.
+
+
+Retain Cycles: 
+- It occurs when a program consistently references an object, and this chain of references is never broken.
+- Techniques such as weak references or unowned references are employed to prevent cyclic references.
+- It occurs among objects of the Reference Type, ie. Class. It doesn't occur with objects of value type, ie. struct & enum
+
+- A Retain Cycle occurs when two objects give strong references to each other, creating a mutual capture of references. If A contains B, and B contains A, a retain cycle is formed. In this scenario, neither object can be deallocated as they hold each other captive, leading to a memory leak.
+
+//example with code
+
+class Person {
+  var name: String
+  var car: Car
+
+  init(name: String, car: Car) {
+    self.name = name
+    self.car = car
+  }
+}
+
+class Car {
+  var owner: Person?
+
+  init(owner: Person?) {
+    self.owner = owner
+  }
+}
+
+let person = Person(name: "Steve Jobs", car: Car(owner: person))
+
+- Things we can do to prevent a retain cycle:
+	- Weak or unowned references can be used.
+	- Using weak or unowned references in closures.
+	- Leveraging memory management features of Automatic Reference Counting (ARC).
+
+
+Strong, Weak vs Unowned References:
+- Strong references prevent an object from being deallocated, meaning the object will not be deallocated as long as there is another strong reference to it.
+- Weak references do not prevent an object from being deallocated.
+- Unowned references do not prevent an object from being deallocated either. In this case, Accessing a deleted object can lead to the application crashing.
+
+Weak vs Onowned:
+- Both do not increase the reference count of the object.
+- Both are used to break retain cycles (especially in closures or delegate patterns).
+- After Deallocation, weak reference automatically set to Nil, while unowned reference becomes a dangling pointer (crashes on access)
+
+
+ARC(Automatic Reference Counting):
+- It automatically tracks and manages the memory used by your app’s objects.
+- As in other languages like C/C++, objective-C, we have to do the memory management manually.
+- When we create a new instance of a class, Swift automatically allocates memory for it
+
+How ARC Works:
+- Each class instance has a reference count (number of strong references to it).
+- When a strong reference to an object is created, its reference count increases.
+- When a strong reference is removed, the count decreases.
+- When the count hits zero, the instance is deallocated automatically(i.e., deinit is called).
+
+ARC Applies To:
+- Class instances only (not structs or enums, which are value types).
+- Capturing self inside closures, especially in asynchronous code.
+
+- It doesn't break retain cycles by itself. Solution is to use weak or unowned for one of the references in the retain cycle.
+
+
+

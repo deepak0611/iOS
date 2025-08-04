@@ -1,0 +1,30 @@
+SOLID Principles:
+S - Single Responsibility Principle - A class should have only one reason to change.
+O - Open/Closed Principle - Software entities should be open for extension but closed for modification.
+L - Liskov Substitution Principle - Subtypes should be substitutable for their base types.
+I - Interface Segregation Principle - Prefer many small, specific interfaces over one large, general-purpose one.
+D - Dependency Inversion Principle - Depend on abstractions, not concrete implementations. Avoid tight coupling.
+
+Benefits:
+S - Single Responsibility - Easier to maintain, less fragile
+O - Open/Closed - Easily extendable
+L - Liskov Substitution - Reliable inheritance
+I - Interface Segregation - Clear, focused protocols
+D - Dependency Inversion - More flexible and testable code
+
+
+OOP in swift:
+
+ core OOP concepts in Swift:
+ - Classes and Objects
+ 	- Classes: A class is like a blueprint or a template for creating objects. It defines the properties and methods that all objects of that class will have.
+ 	- An object is an instance of a class. It's a concrete entity created from the class blueprint. Each object has its own set of values for the properties defined by the class.
+
+- The Four Pillars of OOP:
+1. Encapsulation: Encapsulation helps to hide the internal implementation details of an object from the outside world, controlling how the data can be accessed and modified. Swift achieves this through access control modifiers like private, fileprivate, internal, and public.
+2. Abstraction: Abstraction focuses on showing only the essential features of an object while hiding the unnecessary implementation details. In Swift, this is primarily achieved using protocols, which define a blueprint of methods and properties that a class, struct, or enum must implement without specifying how they work.
+3. Inheritance: Inheritance allows a new class (a subclass or child class) to inherit the properties and methods of an existing class (a superclass or parent class). This promotes code reuse and the creation of a hierarchical structure. In Swift, inheritance is a feature of classes, not structs.
+4. Polymorphism means "many forms." In OOP, it refers to the ability of different objects to respond to the same message (method call) in their own unique way. In Swift, polymorphism is achieved through method overriding, where a subclass provides its own implementation of a method that is already defined in its superclass.
+
+
+- one thing to rememeber is that, there is no concept of abstract class in swift unlike other languages, it is achieved in swift through protocols.

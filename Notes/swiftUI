@@ -1,0 +1,204 @@
+App LifecyCle in SwiftUI:
+
+//main is used to tell the starting point of the app.
+@main
+struct MyApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+        .onChange(of: scenePhase) { newPhase in
+            switch newPhase {
+            case .active:
+                print("App is active")
+            case .inactive:
+                print("App is inactive")
+            case .background:
+                print("App is in background")
+            @unknown default:
+                break
+            }
+        }
+    }
+
+    @Environment(\.scenePhase) private var scenePhase
+}
+
+
+State management in SwiftUI:
+
+1. @State – Local View State
+- Use for simple, private mutable state inside a single View.
+- Backed by a struct; survives view redraws.
+
+struct CounterView: View {
+    @State private var count = 0
+
+    var body: some View {
+        VStack {
+            Text("Count: \(count)")
+            Button("Increment") { count += 1 }
+        }
+    }
+}
+
+2. @Binding – Two-Way Connection
+- Use to pass a reference to state into a child view.
+- The child can mutate the parent's state.
+
+struct ParentView: View {
+    @State private var isOn = false
+
+    var body: some View {
+        ToggleView(isOn: $isOn)
+    }
+}
+
+struct ToggleView: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle("Enabled", isOn: $isOn)
+    }
+}
+
+3. @StateObject – Observable Class Instance
+- Use when your view owns and creates the model.
+- SwiftUI creates it once, and retains it during view updates.
+
+class CounterModel: ObservableObject {
+    @Published var count = 0
+}
+
+struct CounterScreen: View {
+    @StateObject private var model = CounterModel()
+
+    var body: some View {
+        VStack {
+            Text("Count: \(model.count)")
+            Button("Tap") { model.count += 1 }
+        }
+    }
+}
+
+4. @ObservedObject – Passed-In Observable Object
+- Use when the model is created elsewhere and injected.
+- No ownership — if the view is recreated, it doesn’t reinitialize the model.
+
+struct DetailView: View {
+    @ObservedObject var model: CounterModel
+}
+
+//intialisation in some OtherView
+DetailView(model: CounterModel())
+
+
+5. @EnvironmentObject – Shared Global State
+- Use for app-wide or environmental state (e.g. login session, theme).
+- Must be .environmentObject(...) injected by a parent.
+
+class AppSettings: ObservableObject {
+    @Published var isDarkMode = false
+}
+
+@main
+struct MyApp: App {
+    let settings = AppSettings()
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .environmentObject(settings)
+        }
+    }
+}
+
+//Then use it in any descendant:
+struct ContentView: View {
+    @EnvironmentObject var settings: AppSettings
+
+    var body: some View {
+        Toggle("Dark Mode", isOn: $settings.isDarkMode)
+    }
+}
+
+
+Comparison Table:
+
+| Property Wrapper     | Owned by View? | Reactive? | Best Use                     |
+| -------------------- | -------------- | --------- | ---------------------------- |
+| `@State`             | ✅              | ✅         | Simple local state           |
+| `@Binding`           | ❌              | ✅         | Two-way binding to child     |
+| `@StateObject`       | ✅              | ✅         | View-owned observable object |
+| `@ObservedObject`    | ❌              | ✅         | Passed observable object     |
+| `@EnvironmentObject` | ❌ (App-wide)   | ✅         | Global shared state          |
+
+
+
+Optional: Combine with ObservableObject
+- Use @Published inside ObservableObject classes to trigger UI updates:
+class UserData: ObservableObject {
+    @Published var username: String = ""
+}
+
+
+//////////////////////////////////////////////////
+Other Wrappers:
+
+@Environment:
+- It allows you to access shared data or system values that are managed outside the current view hierarchy, such as color schemes, accessibility settings, or custom values injected via .environment().
+- @Environment pulls data from the environment values automatically injected by the system or higher-level views.
+- It is read-only—you can't write to the environment directly from within a view.
+
+
+//Basic Syntax
+@Environment(\.propertyName) var variableName
+
+//Example: Accessing Color Scheme
+
+@Environment(\.colorScheme) var colorScheme
+var body: some View {
+    Text("Hello, world!")
+        .foregroundColor(colorScheme == .dark ? .white : .black)
+}
+
+//This accesses the system’s current dark/light mode setting and changes text color accordingly.
+
+Common Environment Properties:
+
+| Property                              | Description           |
+| ------------------------------------- | --------------------- |
+| `\Environment(\.colorScheme)`         | Light or dark mode    |
+| `\Environment(\.locale)`              | Current locale        |
+| `\Environment(\.sizeCategory)`        | Dynamic type size     |
+| `\Environment(\.presentationMode)`    | View dismissal        |
+| `\Environment(\.horizontalSizeClass)` | Size class for layout |
+
+
+
+@AppStorage:
+- It provides a super simple way to store and retrieve values without writing boilerplate code for UserDefaults.
+
+//Basic Syntax
+@AppStorage("key") var variableName: Type = defaultValue //defaultValue is used if nothing is stored yet
+
+//Example: Dark Mode Toggle
+struct ContentView: View {
+    @AppStorage("isDarkMode") private var isDarkMode = false
+
+    var body: some View {
+        Toggle("Dark Mode", isOn: $isDarkMode)
+    }
+}
+
+- When the user toggles the switch, isDarkMode is updated.
+- That change is automatically saved to UserDefaults under the key "isDarkMode".
+- When the app restarts, it will remember the previous setting.
+
+
+
+
+
+
+
+

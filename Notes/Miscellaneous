@@ -1,0 +1,140 @@
+Provisioning Profiles & Certificates:
+
+Certificates:
+- Certificates are used to prove your identity as a developer to Apple.
+- Certificates are used to sign the app.
+- It is tied to your Apple Developer account.
+
+Provisioning Profiles:
+Provisioning profiles link:
+- A certificate
+- One or more devices (for development)
+- An app ID (your app's unique identifier)
+
+basically, it stores info about certificates, devices registered(on which our app can run), and appId.
+
+How They Work Together:
+1. Certificate signs our app.
+2. Provisioning profile tells iOS it's allowed to run on a device (and under what conditions).
+3. We need both to install and run apps on real devices or distribute them.
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+SSL Pinning & Cryptography
+
+Asymmetric Cryptography: 
+- It is basically public-private key thing.
+- A pair of keys (public and private). What one key encrypts, only the other can decrypt.
+- server keeps private key to itself and distribute the public key, when it sends data(which is encrypted by private key), it can only be decrypted with it's public key.
+
+Man in the Middle attack:
+- It's a scenario where someone intercepts the one to one communication in between, and can read or manipulate the data.
+- Even the https network calls can be intercepted with proxy software like charles.
+- Man in the middle attack can be prevented using SSL pinning.
+
+SSL Pinning:
+- SSL means Secure Socket Layer.
+- With this we can prevent MITMA
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+Push Notifications:
+- It is the notifications that we receive in our iphone.
+
+How push notifications work?
+
+1. Our app registers with Apple Push Notification Service, via api call.
+2. Apple Push Notification Service provides a token back to the app in the api response.
+3. We send this token to our Push Notification Provider(eg. Firebase cloud messenging(FCM), PushEngage, OneSignal, CleverTap etc.) through api call.
+
+4. Provider send token(s) and request Apple Push Notification Service to send out push notification.
+5. Notification will be sent out by Apple Push Notification Service to the user's device.
+
+
+What information are there in the token:
+- well, it is not publicly available by apple.
+- But it is known to be:
+	- Be unique per device-app combination (and per environment: development vs production).
+	- Encode enough information for APNs to:
+		- Route the push notification to the correct device.
+		- Ensure it is delivered to the correct app.
+		- Ensure it is delivered in the correct environment (sandbox vs production).
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+Responder chain in UIKit:
+
+- The responder chain is a hierarchy of objects that can respond to events. If one object can't handle an event, it passes the event to the next object in the chain. This process continues until the event is handled or discarded.
+
+
+Objects that can become first responder and participate in the responder chain include:
+- UIView
+- UIViewController
+- UIApplication
+- UIResponder (base class)
+All of these inherit from UIResponder.
+
+
+
+Typical Responder Chain Order:
+UITextField (user taps here)
+  ⬇
+UIView containing the text field
+  ⬇
+UIViewController managing the view
+  ⬇
+UIWindow
+  ⬇
+UIApplication
+  ⬇
+AppDelegate (if it implements the method)
+
+
+//example
+three views are there, v1, v2, v3.
+FrameOf(v1) > FrameOf(v2) > FrameOf(v2)
+v1.addSubView(v2)
+v2.addSubView(v3)
+
+basically, v2 is inside v1 and v3 is inside v2.
+
+v1 has implemented tapgesture for itself. and v2 has done the same for itself. v3 has not implemented tap gesture for itself.
+
+Now,
+
+if we tap v1, v1's tap action will get executed.
+if we tap v2, v2's tap action will get executed.
+
+if we tap v3, v2's tap action will get executed, since v3 has no implementation of it's own, so it will pass on the event to the next view in the responser chain, i.e v2. and v2 has implementation of tap gesture so it will get executed.
+if v2, don't had the tap gesture implemented, then it would have too passed it to v1. and v1's tap gesture function would have got executed.
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////
+Access Modifiers:
+- open: Most permissive. Accessible and subclassable/overridable outside the module. Only for classes and class members.
+- public: Accessible outside the module, but not subclassable or overridable outside.
+- internal: Default access. Accessible within the same module (target/framework/app).
+- fileprivate: Accessible only within the same file.
+- private: Accessible only within the same declaration (like a class or struct) and its extensions in the same file.
+
+Use Cases:
+- open: Used in frameworks when you want users to subclass or override your class/method.
+- public: When exposing functionality without allowing overriding.
+- internal: Default; fine for most app code that doesn’t need to be shared outside the module.
+- fileprivate: Useful for splitting logic across multiple types in the same file.
+- private: For strictly encapsulated behavior.
+
+Notes:
+- You can’t make something more accessible than its containing type. (e.g., a private class can't have a public method).
+- Extensions must respect the access level of the original type unless redefined.
+
+

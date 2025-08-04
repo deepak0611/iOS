@@ -1,0 +1,183 @@
+Unit Testing:
+- Unit testing involves writing small tests that check individual units of code (e.g., functions, methods, or classes) for correctness.
+
+- Unit testing in iOS helps ensure that your code behaves as expected, automatically and reliably. Apple provides the XCTest framework, which is deeply integrated into Xcode.
+
+Tools:
+- Framework: XCTest
+- Test Case: Subclass of XCTestCase
+- Assertions: Methods like XCTAssertEqual, XCTAssertTrue, etc.
+
+How to Set It Up in Xcode:
+- Go to File > New > Target.
+- Choose Unit Testing Bundle.
+- Add your tests in YourAppTests.swift.
+
+
+//Exmaple: Testing a Simple Function
+
+class MathHelper {
+    func add(_ a: Int, _ b: Int) -> Int {
+        return a + b
+    }
+}
+
+Unit Test:
+
+import XCTest
+@testable import YourApp
+
+final class MathHelperTests: XCTestCase {
+
+    var mathHelper: MathHelper!
+
+    override func setUp() {
+        super.setUp()
+        mathHelper = MathHelper()
+    }
+
+    override func tearDown() {
+        mathHelper = nil
+        super.tearDown()
+    }
+
+    func testAddition() {
+        let result = mathHelper.add(2, 3)
+        XCTAssertEqual(result, 5, "Expected 2 + 3 to equal 5")
+    }
+}
+
+
+// Example: Testing ViewModels or Business Logic
+
+class LoginViewModel {
+    func isValidEmail(_ email: String) -> Bool {
+        return email.contains("@")
+    }
+}
+
+func testEmailValidation() {
+    let viewModel = LoginViewModel()
+    XCTAssertTrue(viewModel.isValidEmail("test@example.com"))
+    XCTAssertFalse(viewModel.isValidEmail("bademail.com"))
+}
+
+
+
+// XCTest Assertions
+- XCTAssertTrue: Checks if value is true
+- XCTAssertFalse: Checks if value is false
+- XCTAssertEqual: Checks equality
+- XCTAssertNotEqual: Checks inequality
+- XCTAssertNil: Checks if value is nil
+- XCTAssertNotNil: Checks if value is not nil
+- XCTFail(): Fails the test unconditionally
+
+
+
+Best Practices:
+- Use @testable import to access internal code in your app module.
+- Keep tests independent and repeatable.
+- Use setUp() and tearDown() for setup/cleanup.
+- Test edge cases, not just happy paths.
+- Don't test UI in unit tests — use UI Testing instead.
+
+ 
+Run Tests:
+- Use Cmd + U in Xcode.
+- View results in the Test Navigator.
+
+
+
+
+
+////////////////////////
+Mocking & Stubbing:
+- Mocking and stubbing are techniques used in unit testing to isolate and control dependencies, especially when dealing with things like networking, databases, or hardware that are hard to use in a test environment.
+
+
+| Concept  | Description                                                                     |
+| -------- | ------------------------------------------------------------------------------- |
+|   Mock   | A fake object that can record interactions, like method calls or values passed. |
+|   Stub   | A fake object that returns fixed data in response to method calls.              |
+|   Spy    | A type of mock that tracks how it was used (e.g., method call count).           |
+
+
+// Example: Networking
+- Say we have a service that fetches user data:
+
+//protocol
+protocol UserService {
+    func fetchUser(completion: @escaping (User) -> Void)
+}
+
+//Mock Service
+class MockUserService: UserService {
+    var fetchCalled = false
+    var userToReturn: User?
+
+    func fetchUser(completion: @escaping (User) -> Void) {
+        fetchCalled = true
+        if let user = userToReturn {
+            completion(user)
+        }
+    }
+}
+
+//viewModel that uses the service
+
+class UserViewModel {
+    private let service: UserService
+    var username: String?
+
+    init(service: UserService) {
+        self.service = service
+    }
+
+    func loadUser() {
+        service.fetchUser { user in
+            self.username = user.name
+        }
+    }
+}
+
+//testing with the mock
+func testLoadUserSetsUsername() {
+    let mockService = MockUserService()
+    mockService.userToReturn = User(name: "Alice", id: 1)
+
+    let viewModel = UserViewModel(service: mockService)
+    viewModel.loadUser()
+
+    XCTAssertEqual(viewModel.username, "Alice")
+    XCTAssertTrue(mockService.fetchCalled)
+}
+
+
+// Stubbing with Return Values
+
+class StubUserService: UserService {
+    func fetchUser(completion: @escaping (User) -> Void) {
+        let mockUser = User(name: "StubUser", id: 99)
+        completion(mockUser)
+    }
+}
+
+
+When to Mock/Stub:
+
+| When You Need To...                      | Use       |
+| ---------------------------------------- | --------- |
+| Avoid real network/database dependencies | Stub      |
+| Verify function calls/arguments          | Mock/Spy  |
+| Return predictable test data             | Stub      |
+| Test in isolation                        | Mock+Stub |
+
+
+
+
+
+
+
+
+

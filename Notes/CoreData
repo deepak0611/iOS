@@ -1,0 +1,389 @@
+Various ways to save data locally:
+1. UserDefaults
+	- Best For: Small key-value data (e.g. user settings, preferences)
+	- Not suitable for sensitive data(since data don't get encrypted) or large datasets. 
+	- UserDefaults.standard.set("John", forKey: "username")
+	  let name = UserDefaults.standard.string(forKey: "username")
+2. Keychain
+	- Best For: Storing sensitive data (e.g. passwords, tokens)
+	- System handles encryption & secure access (all data get encrypted and it's very secure)
+	- let keychain = Keychain(service: "com.myapp.service")
+	  keychain["token"] = "abc123"
+3. File System (Documents, Caches, Temporary)
+	- Best For: Arbitrary files, images, PDFs, custom data formats
+	- let fileURL = FileManager.default
+	    .urls(for: .documentDirectory, in: .userDomainMask)[0]
+	    .appendingPathComponent("example.txt")
+	  try? "Hello, world!".write(to: fileURL, atomically: true, encoding: .utf8)
+4. Core Data
+	- Best For: Complex, relational, structured data
+	- Supports undo, relationships, migrations. And it is Queryable via predicates.
+
+
+
+Core Data:
+- It is a framework that manages the data persistent job for us.
+
+Terminology of coredata:
+- Entity: It is equaivalent to model in code. and is equaivalent to table in database.
+- Attributes: It is equivalent to properties of a model in code. and is equivalent to column in database.
+- PersistentContainer: It is the Sqlite file. that resides inside the application support folder.
+- ViewContext/context: It is used for reading, writing and saving data in the persisentContainer. It is the main context, & is associated with main thread.
+
+NSManagedObject: It is the base class of every Entity in coredata.
+NSManagedObjectContext: It is ViewContext mentioned above.
+NSPersistentContainer: It is PersistentContainer mentioned above.
+
+How to create an Entity?
+- Go to yourProjectName.xcdataModeld
+- create an entity in the entity section.
+- on right panel(for a selected entity), we will see codegen option.
+- codegen = manual/none, means raw core data codes will reside in the codebase, which you can manipulate. But this we need to create by ourself with the help of xcode.(How? Select Editor -> Create NSManagedObject Subclass -> select entities and location, where we want our code.)
+- codegen = class definition, means raw core data codes will reside in derived data folder. so in normal use cases we select class definiton. And we don't need to do anything for it's creation.
+
+
+//Boiler code plate for using coreData
+
+final class PersistentStorage {
+	
+	private init() {}
+	// making a singleton class to manage all the coreData related task of our app.
+	static let shared = PersistentStorage()
+
+	lazy var persistentContainer: NSPersistentContainer = {
+		let container = NSPersistentContainer(name: "YourAppName")
+		container.loadPersistentStores(completionHandler: { (storeDescription, error) in
+			if let error = error as? NSError? {
+				fatalError("Unresolved error: \(error), \(error.userInfo)")
+			}
+		})
+		return container
+	}()
+
+	lazy var context = persistentContainer.viewContext
+
+	func saveContext() {
+		if context.hasChanges {
+			do {
+				try context.save()
+			} catch {
+				let nserror = error as NSError
+				fatalError("Unresolved error: \(nserror), \(nserror.userInfo)")
+			}
+		}
+	}
+
+	func fetchManagedObject<T: NSManagedObject>(managedObject: T.Type) -> [T]? {
+		do {
+			guard let result = try context.fetch(managedObject.fetchRequest()) as? [T] else {
+				return nil
+			}
+			return result
+		} catch let error {
+			debugPrint(error)
+		}
+		return nil
+	}
+}
+
+
+How to create entry for an entity?
+func createEmployee() {
+	let employee = Employee(context: PersistentStorage.shared.context)
+	employee.name = "Deepak"
+	PersistentStorage.shared.saveContext()
+}
+
+
+How to get the entries saved for an entity?
+func fetchEmployees() {
+	do {
+		guard let result = try PersistentStorage.shared.context.fetch(Employee.fetchRequest()) as? [Employee] else {
+			return
+		}
+
+		result.forEach({debugPrint($0.name)})
+	} catch {
+		debugPrint(error)
+	}
+}
+
+
+
+Predicate:
+- it is like a SQL WHERE clause or a filter in an array.
+- Common Use Cases:
+	- Filtering Core Data fetches
+	- Filtering arrays with .filter(using:)
+	- Search features
+	- NSFetchRequest in Core Data
+
+//code examples
+
+- Basic Syntax
+let predicate = NSPredicate(format: "age > %d", 18) 
+/*This can be used to fetch people older than 18 from Core Data or filter arrays.*/
+
+- Core Data Fetch Example
+let request = NSFetchRequest<Person>(entityName: "Person")
+request.predicate = NSPredicate(format: "name == %@", "Alice")
+let results = try context.fetch(request)
+/*This fetches Person objects where name is "Alice".*/
+
+
+
+
+
+Repository Design Pattern:
+- The Repository Pattern is a design pattern used to abstract and encapsulate data access logic. 
+- It provides a clean API for data operations, so the rest of your app doesn't need to know where the data comes from. ie. Core Data, REST API, Realm, Firebase, etc.
+- example to understand: Imagine a vending machine (repository): You ask for a drink, and it fetches it for you—you don’t care if it came from a fridge, warehouse, or somewhere else.
+
+
+//example with code
+
+so, we create repository for each entity to handle their CRUD operations. ie.
+EmployeeDataRepository - handles-> Employee Entity CRUD operations
+ProjectDataRepository - handles-> Project Entity CRUD operations
+FinanceDataRepository - handles-> Finance Entity CRUD operations
+DepartmentDataRepository - handles-> Department Entity CRUD operations
+
+
+flow: ViewController.swift -asks-> EmployeeManager.swift -asks-> EmployeeDataRepository.swift -swift-> PersistentStorage.swift -> storage
+
+
+protocol DataRepository {
+	associatedType dataModel
+	func create(data: dataModel)
+	func getAll() -> [dataModel]?
+	func get(byIdentifier id: UUId) -> dataModel?
+	func update(data: dataModel) -> Bool
+	func delete(record: dataModel) -> Bool
+}
+
+- We have model Employee and CDEmployee as it's Entity. (CDEmployee means core data employee, it's just naming convention for easier understanding)
+
+struct EmployeeDataRepository: DataRepository {
+
+	func create(data: dataModel) {
+		let cdEmployee = CDEmployee(context: PersistentStorage.shared.context)
+		cdEmployee.email = data.email
+		cdEmployee.name = data.name
+		cdEmployee.profilePic = data.profilePic
+		cdEmployee.id = data.id
+
+		PersistentStorage.shared.saveContext()
+	}
+
+	func getAll() -> [dataModel]? {
+		let result = PersistentStorage.shared.fetchManagedObject(managedObject: dataModel.self)
+		var models: [dataModel] = []
+		result?.forEach({ model in
+			models.append(model.convertToItsCorrenpondingModel())
+		})
+		return models
+	}
+
+	func get(byIdentifier id: UUId) -> dataModel? {
+		let result = getCDDataModel(byIdentifier: id)
+		guard result != nil else { return nil }
+		return result?.convertToItsCorrenpondingModel
+	}
+
+	func update(data: dataModel) -> Bool {
+		let cdDataModel = getCDDataModel(byIdentifier: data.id)
+		guard cdDataModel != nil else { return false }
+
+		cdDataModel?.email = data.email
+		cdDataModel?.name = data.name
+		cdDataModel?.ProfilePic = data.ProfilePic
+
+		PersistentStorage.shared.saveContext()
+		return true
+	}
+
+	func delete(id: UUID) -> Bool {
+		let cdDataModel = getCDDataModel(byIdentifier: id)
+		guard cdDataModel != nil else { return false }
+
+		PersistentStorage.shared.context.delete(cdDataModel)
+		PersistentStorage.shared.saveContext()
+		return true
+	}
+
+	private func getCDDataModel(byIdentifier id: UUID) -> CDDataModel? {
+		let fetchRequest = NSFetchRequest<dataModel>(entityName: dataModel.description)
+		let predicate = NSPredicate(format: "id == %@", id as CVarArg)
+		fetchRequest.predicate = predicate
+		do {
+			let result = try PersistentStorage.shared.context.fetch(fetchRequest)
+			guard result != nil else { 
+				return nil
+			}
+			return result
+		} catch let eror {
+			debugPrint(error)
+		}
+	}
+}
+
+//so with repository in between, the caller will never know which CDModel we are using internally.
+//Now any managerClass or ViewController itslef can call repository to do CRUD operation, without knowing the dataSource operating behind.
+
+//example code of manager
+
+struct EmployeeDataManger {
+	private let _employeeRepository = EmployeeRepository()
+
+	func createEmployee(employee: Employee) {
+		_employeeRepository.create(data: employee)
+	}
+
+	func fetchEmployee() -> [Employee]? {
+		return _employeeRepository.getAll()
+	}
+
+	func updateEmployee(employee: Employee) -> Bool {
+		return _employeeRepository.update(data: employee)
+	}
+
+	//similarly we can implement other functions as well
+	//and we can create object of manager class in viewController and do the CRUD operation with manager.
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Relations in CoreData:
+
+- One to One
+	- One object is related to one other object.
+	- eg. A Person has one Passport.
+	- person.passport //returns a Passport object
+- One to Many
+	- One object is related to multiple other objects.
+	- A Person has many Pets.
+	- person.pets  // returns a Set<Pet>
+- Many to Many
+
+//need to add description here, about how to add it in xcode.
+
+
+Cardinality: 
+	- It defines how many instances of one entity can be related to another.
+	- You can specify one-to-one, one-to-many, or many-to-many.
+
+Delete Rule:
+when one of the related data deleleted, how to delete this one data?
+No Action
+Nullify (Most common) - set the relationship to nil or removes the object from the set
+Cascade
+Deny
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Pagination in CoreData:
+- Using coreData for UITableView and UICollectionView.
+
+- we can achieve it with apple provided framework itself, by using NSFetchedResultController.
+// reference: https://www.youtube.com/watch?v=zbTP9HSrbEo&list=PLb5R4QC2DtFsJwFLf9119aefRnEMDp4aB&index=8
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////
+File Manager in iOS:
+- FileManager lets us read, write, and manage files and directories in our app’s sandboxed file system.
+- Sandbox: Each app has its own container with directories like:
+	- Documents – For user-generated content (backed up)
+	- Caches – For temporary data (not backed up)
+	- Temporary – Deleted when app exits
+	- Application Support – For app-specific files
+
+
+Common Directory Paths:
+
+let fileManager = FileManager.default
+// Documents directory
+let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+// Caches directory
+let cachesURL = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
+// Temporary directory
+let tempURL = fileManager.temporaryDirectory
+
+
+//Create a file
+let fileURL = documentsURL.appendingPathComponent("example.txt")
+let content = "Hello, File Manager!".data(using: .utf8)
+
+do {
+    try content?.write(to: fileURL)
+    print("File created at: \(fileURL.path)")
+} catch {
+    print("Error writing file:", error)
+}
+
+//Read a file
+do {
+    let savedContent = try String(contentsOf: fileURL, encoding: .utf8)
+    print("File content:", savedContent)
+} catch {
+    print("Error reading file:", error)
+}
+
+//Delete a file
+do {
+    try fileManager.removeItem(at: fileURL)
+    print("File deleted.")
+} catch {
+    print("Error deleting file:", error)
+}
+
+//Create a directory
+let newFolderURL = documentsURL.appendingPathComponent("MyFolder")
+
+do {
+    try fileManager.createDirectory(at: newFolderURL, withIntermediateDirectories: true)
+    print("Directory created at:", newFolderURL.path)
+} catch {
+    print("Error creating directory:", error)
+}
+
+//Check if file exists
+if fileManager.fileExists(atPath: fileURL.path) {
+    print("File exists.")
+}
+
+
+
+
+
+
+
+
+
+

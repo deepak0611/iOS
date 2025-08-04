@@ -1,0 +1,33 @@
+- final Keyword: The final keyword prevents a class, method, or property from being overridden or subclassed.
+
+- AnyObject: 
+	- AnyObject is a protocol that represents any class type (not struct or enum). 
+	- It's often used in: Protocol constraints, Collections of heterogeneous objects.
+//code example
+class Dog {}
+class Cat {}
+
+let animals: [AnyObject] = [Dog(), Cat()]  // Only class instances allowed
+
+//code example 2
+protocol Named: AnyObject {
+    var name: String { get }
+}
+
+This says: Only class types can conform to Named, not struct or enum.
+
+
+- @viewBuilder modifier in swiftui: It flattens block of views into a single view using Group wrapper internaly.
+
+//exmaple
+func myView() -> some View {
+    Text("Hello")
+    Text("World") // ❌ Error: function must return a single View
+}
+
+//if we use @viewBuilder, error will be gone.
+@viewBuilder
+func myView() -> some View {
+	Text("Hello")
+    Text("World") 
+}

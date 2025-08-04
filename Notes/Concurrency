@@ -1,0 +1,733 @@
+
+
+YT playlist: https://www.youtube.com/watch?v=yH0RBTdNi3U&list=PLSbpzz0GJp5RTrjum9gWTqPhM4L3Kop0S&index=2
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Concurrency:
+-Concurrency: concurrency is the execution of the multiple instruction sequences at the same time. (2 queue, 1 machine)
+-Parallelism: it is the use of multiple processing elements simultaneously for solving any problem. (2 queue, 2 machine)
+
+How concurrency is achieved?
+with Time Slicing and context switching.
+-Time Slicing: It is a technique where CPU allocates fixed time(tiny slice of time) to each task. and changes the task when that fixed time has overed.
+-Context Switching: Context switching is the process of saving the state of a task, so that it can be paused and resumed later.
+
+How concurrency is achieved in iOS?
+-It is achieved through multi-threading. For the app, thread is like processing resource/machine.
+
+Using Thread: means in simple terms, you are directly using processor to execute your task.
+Using Queue: means in simple terms, you are making queue of tasks that will executed in FIFO(maybe in sync or async way) order on some thread/processor.
+
+
+Custom Threads:
+
+We can create thread manually, 
+-benefits of manual thread creation,
+    - raw approach, everything we will be handling cleanup, memory management etc.
+    - More control & customisation
+        - like when to start
+        - can cancel any time
+        - can delay the start
+        - can change/modify the stack size
+
+Challenges with Manual thread creation:
+- responsibility to manage the threads with system conditions
+- deallocation once they have finished executing
+- improper management may cause memory leak in app
+- Auto release pool will not manage threads created by us
+- Maintaining the order of execution 
+
+Custom Thread gives us more control, but with more power comes more responsibility.
+In real life, practically and in projects, we are not going to use custom threads. It's a bad practice to use custom thread
+//And this is an older way of handling concurrency, modern way is GCD and operationQueue.
+
+//code for custom thread
+class CustomThread {
+    func createThread() {
+        let thread: Thread = Thread(target: self, selector: #selector(threadSelector), object: nil)
+        thread.start()
+    }
+
+    @objc func threadSelector() {
+        print("custom thread in action")
+    }
+ }
+
+ let customThread = CustomThread()
+ customThread.createThread()
+
+
+
+GCD:
+Grand Central Dispatch or commonly referred as Dispatch.
+- GCD is a queue based API that allows to execute closures on workers pool in the FIFO order.
+- Which thread is used to excute a task is handled by GCD, not the developer & execute them on an appropriate dispatch queue.
+
+- GCD manages a collection of dispatch queues. They are usually reffered as queues. The work submitted to these dispatch queues is executed on a pool of threads.
+- A dispatch queue execute tasks either serially or concurrently but always in a FIFO order.
+- An application can submit a task to queue in the form of blocks either synchronously or asynchronously.
+- Order of exectuon(serial/concurrent) vs manner of execution(sync/Async): first decides whether the task will be picked up serially or concurrently while the second means how the task will be executed, whether it will block your current execution that was already happening or will it keep happening & this task will be taken care separately.
+
+
+
+Synchronous vs Asynchronous (these defines manner of excution of code blocks)
+- Synchronous: Block the execution till this task is completed.
+- Asynchronous: Continue the execution of current task, while new task will execute asynchronously.
+
+
+Serial Queue vs Concurrent Queue:
+- Serial: One task at a time.
+- Concurrent: Multiple tasks at a time. Even for concurrent, tasks will be dequed serially. in a fixed order, i.e FIFO.
+
+
+Serial/Concurrent vs Sync/Async
+- Serial/Concurrent affects the destination queue to which you are dispatching.
+- Sync/Async affects the current thread from which you are dispatching.
+
+
+//code to understand above mentioned
+
+var counter = 1
+DispatchQueue.main.async {
+    for i in 0...3 {
+        counter = i;
+        print("\(counter)")
+    }
+}
+
+for i in 4...6 {
+    counter = i;
+    print("\(counter)")
+}
+
+DispatchQueue.main.async {
+    counter = 9;
+    print("\(counter)")
+}
+
+
+output of this code will be:
+4 5 6 0 1 2 3 9
+
+456 printed first becuase of async block above.
+9 printed after 0123 because of serial nature of main queue.
+point to note: that main queue is a serial queue.
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+DispatchQueue:
+
+Types of DispatchQueues:
+- Main Queue
+    - System Created
+    - Serial
+    - Uses main thread, access to main thread is not available to any other queue except main queue (some exceptional cases exist).
+    - UIKit is tied to Main thread, so all UI related operations must be performed on Main Queue
+- System provided Global Concurrent Queues
+    - System created
+    - Concurrent
+    - Do not use main thread (except sometime in userInteractive QoS case, when main thread is available)
+    - Priorities are decided through QoS
+- Custom Queues
+
+
+
+Quality of Service (QoS):
+QoS tells the system how it should utilise the resources required for your job to be executed. 
+Resource utlising means which thread to be executed on, if it requires input output(access to iostream is needed), scheduling priority, etc. there are various parameters that needs to be set while executing any task, all those paramters are set automatically by iOS itself when we specify the QoS. 
+
+To understand it well: It is similar to some enum, when you set value of enum, paramters related to that enum are automatically chosen. it works same way here, all the processing related params are automatically set related to that QoS.
+
+Types of QoS:
+- User Interactive
+    - Animations
+    - involved in updating UI? if yes, use this. (eg. updating the frame of a view). This is exception kind of case, because main thread is used for UI updates not global concurrent queues. But if global queues are used,then it's QoS will be this.
+- User Initiated
+    - Immediate Results
+    - Data required for seamless user experience? if yes, use this. (eg. user is scrolling any tableView, next batch of data is required to be shown in the tableView to user, use this QoS)
+- Utility
+    - Long running tasks
+    - is user aware of the progress of the task? if yes, then use this. (eg. downloading any file, and showing progress of that to user)
+- Background
+    - Not visible to user
+    - is user aware of the task? if no, then use this. (eg. making backup of the data)
+
+
+Priority of QoS: (means how much system will allocate resources depending on QoS)
+1. User Interactive
+2. User Initiated
+3. Utility
+4. Background
+
+There are two other QoS types as well:
+- Default: priority of this falls between userInitiated and utility
+- Unspecified: Absence of QoS info. This will have least priority.
+
+
+//code for QoS
+DispatchQueue.global(qos: .background).async {
+    for i in 6...10 {
+        print(i)
+    }
+}
+
+DispatchQueue.global(qos: .userInteractive).async {
+    for i in 0...5 {
+        print(i)
+    }
+}
+
+It's output will be: 0 6 7 1 2 3 8 4 5 9 10 (it can have different output as well, since both are running concurrently, point to note here is userInteractive task will get more resources because of it's higher priority. so if both task is equally heavy then userInteractive task will finish first.)
+
+
+
+
+CustomQueue:
+
+let customQueue: DispatchQueue = DispatchQueue(
+                                                label: String, // {name of the queue, that can be used later to identify thecrashing queue}
+                                                qos: DispatchQoS,
+                                                attributes: DispatchQueue.Attributes,
+                                                autoReleaseFrequency: DispatchQueue.autoReleaseFrequency,
+                                                target: DispatchQueue?
+                                            )
+
+- Available Attributes for Queue:
+    - .concurrent
+    - .initiallyInactive
+
+- By default created queue is serial in nature. we can make it concurrent by using .concurrent attribute.
+- Execution starts for the Queue as soon as it is created, to delay the start and start it at some later time in future, we can use .initiallyInactive attribute.
+
+
+Target Queue:
+- A queue that your custom queue will use behind the scenes
+- A dispatch queue's priority is inherited from it's target queue
+- If we don't specify a target queue, it's 'default priority global queue' by default
+
+
+- System has fixed set of queues and all the jobs that we dispatch either on global dispatch queues or the custom queues, they are executed on those fixed set of queues only, which are the target queues.
+- To keep the number of queues limited in the system, concept of target queues exist
+
+
+//code for customQueue and TargetQueue
+let a = DispatchQueue(label: "A")
+let b = DispatchQueue(label: "B", attributes: .concurrent, target: a)
+
+a.async {
+    for i in 0...2 {
+        print(i)
+    }
+}
+
+a.async {
+    for i in 3...5 {
+        print(i)
+    }
+}
+
+b.async {
+    for i in 6...8 {
+        print(i)
+    }
+}
+
+b.async {
+    for i in 9...11 {
+        print(i)
+    }
+}
+
+It's output will be: 0 1 2 3 4 5 6 7 8 9 10 11
+a is serial queue. b was defined .concurrent but it's target queue is a, so it inherited all of the a's properties and it become serial. so all the tasks of a are executed serially then all the tasks of b are executed serially.
+
+- We can't change the target of a queue, once it has moved to active state. It will result to crash if done so.
+- We can set the target as b.setTarget(queue: a), only when b has attibute, .initiallyInactive in it's attribute list. and we call the method b.activate() after setting the target.
+
+
+
+Auto Release Frequency:
+- Constants indicating the frequency with which a dispatch queue auto releases objects.
+
+types of Auto Release Frequency:
+- inherit: inherit from target queue (default behaviour)
+- workItem: indivisual auto release pool
+- never: never setup an indivisual auto release pool
+
+will know more about these while discussing memory management.
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Dispatch Group:
+- Multiple task can be grouped together
+- We can wait for the task to be finished, or can continue with some other task and can get notified when tasks in the group completes.
+
+four important functions of Dispatch Group:
+- .enter() : call this function whenever a task is added to the dispatchGroup
+- .leave() : call this function whenever the exection of task completes
+- .wait() : You can wait for the task to be finished, and not proceed with the ongoing task, using wait function
+- .notify() : when the count of enter balance against count of leave, that is when the execution of all of them is finished, .notify() gets called.
+
+
+//code for dispatchGroup
+
+Class SplashScreen: UIViewController {
+    var launchDataDispatchGroup: DispatchGroup = DispatchGroup()
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        DispatchQueue.global().async { [weak self] in
+            self?.getAppLaunchData()
+        }
+    }
+
+    func getAppLaunchData() {
+        launchDataDispatchGroup.enter()
+
+        NetworkCall1 { [weak self] (response, error) in
+            self?.launchDataDispatchGroup.leave()
+        }
+
+        launchDataDispatchGroup.enter()
+        NetworkCall2 { [weak self] (response, error) in
+            self?.launchDataDispatchGroup.leave()
+        }
+
+        launchDataDispatchGroup.notify(queue: .main) { [weak self] in
+            print("all network calls completed")
+            //take some action after that
+        }
+    }
+
+    //using wait() function
+    // wait stops the execution on the current thread, that's why wait should not be called on main thread
+    func getAppLaunchData() {
+        launchDataDispatchGroup.enter()
+
+        NetworkCall1 { [weak self] (response, error) in
+            self?.launchDataDispatchGroup.leave()
+        }
+
+        launchDataDispatchGroup.enter()
+        NetworkCall2 { [weak self] (response, error) in
+            self?.launchDataDispatchGroup.leave()
+        }
+
+        /* if we use wait(), all code below this will not be executed untill all the dispatchGroup tasks has finished.
+         That way we can use wait() instead of notify() to proceed only when all the tasks are finished. But in this case it will block all the task execution, after that line of code.   */
+        launchDataDispatchGroup.wait() 
+        DispatchQueue.main.async {
+            print("all network calls completed")
+            //take some action after that
+        }     
+    }
+
+    //using wait() with timeout
+    func getAppLaunchData() {
+        launchDataDispatchGroup.enter()
+
+        NetworkCall1 { [weak self] (response, error) in
+            self?.launchDataDispatchGroup.leave()
+        }
+
+        launchDataDispatchGroup.enter()
+        NetworkCall2 { [weak self] (response, error) in
+            self?.launchDataDispatchGroup.leave()
+        }
+
+        /* This will wait only till timeout. We can know with  waitResult, whether all calls were completed before timeout or not */
+        let waitResult: DispatchTimeOutResult = launchDataDispatchGroup.wait(timeout: .now() + .seconds(3))
+        DispatchQueue.main.async {
+            switch waitResult {
+                case .success:
+                    print("all api calls completed before timeout")
+                case .timeout:
+                    print("apis timed out")
+            }
+
+            //take some action after that
+        }     
+    }
+}
+
+
+
+
+Dispatch WorkItem:
+- Encapsulate a block of code
+- Can be dispatched on both DispatchQueue and DispatchGroup
+- Provides the flexxibility to cancel the task (unless the execution has started)
+
+Cancel Property in WorkItem:
+- If it is set 'true' before execution, task won't execute
+- If work item is cancelled during execution, 'cancel' will return true but execution won't abort.
+- wait() and notify() works the same way.
+
+
+//code for dispatch workItem
+
+Class SplashScreen: UIViewController {
+    var userNameTextField: UITextField?
+    var userNameAvailabilityWorkItem: DispatchWorkItem?
+
+    func checkUserNameAvailability(userName: String) {
+        userNameAvailabilityWorkItem?.cancel()
+
+        let workItem: DispatchWorkItem = DispatchWorkItem {
+            //code of network call to get the userName availability
+        }
+
+        userNameAvailabilityWorkItem = workItem
+        DispatchQueue.global().asyncAfter(deadline: .now() + .seconds(1), execute: workItem) 
+    }
+
+    func textField(_ textField: UITextField, shouldChangeCharacterIn range: NSRange, replacemen....) -> Bool {
+        if textField == userNameTextField {
+            checkUserNameAvailability(userName: textField.text?.appending(string) ?? "")
+        }
+        return true
+    }
+}
+
+
+- so basically, we are keeping the network call code block inside the workItem. whenever user types some text in userName textField, we are calling the checkUserNameAvailability function which is making network call, we don't want to make unneccessary network calls. So whenever text is changing, firstly we are cancelling the previous workItem, so it won't be executed, and at the same time we are updating it with new workItem, with new string. If the workItem is on cancelled, it will get executed after 1 second. so when user stops typing, after one second user will get the response of workItem.
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Dispatch Barrier:
+It is used to avoid race condition, means two or more threads accessing the same block of code to write something, leading to data inconsistency.
+
+
+//code for Dispatch Barrier
+suppose two items are there in cart, and you have balance in your wallet that is enough to buy one only.
+
+func didBuyBoth() {
+    for product in products {
+        purchaseQueue.async {
+            self.buyItem(product: product);
+        }
+        /* in this scenario, of async code block, buyItem can be called for both product from different threads at the same time.  (self.walletBalance > product.price) and this check can pass for both, because it runned for both at the same time. which will make the wallet balance negative. To restrict access to buyItem code block one at a time, we can add .barrier flag in the async function.*/
+
+        purchaseQueue.async(flags: .barrier) { [weak self] in
+            self?.buyItem(product: product)
+        }
+        /* this flag will make sure that the code block inside async is accessed by only one thread at a time. With this only one product will be bought. */
+
+    }
+}
+
+func buyItem(product: Product) {
+    if self.walletBalance > product.price {
+        //make network call to buy the product and update the wallet balance
+        walletBalance -= product.price
+    } else {
+        print("show other payment option")
+    }
+}
+
+
+
+
+Dispatch Semaphore:
+It is also one of the better way to avoid race condition.
+Semaphore are more powerful than barrier and it provides more flexibility in handling the race condition.
+
+
+critical section:
+- part of program which tries to access shared resources
+- when critical section is accessed by multiple threads at the same time, there are strong chances of data inconsistency.
+- solution? -> make exclusive access -> using semaphores
+
+
+- in semaphores, we can configure how many threads can access the critical section, by configuring the counterValue. While in case of barrier, it is restricted to one only.
+
+
+functions in semaphore:
+wait(): when a thread enters critical section, it call wait(). It decreases the counterValue by 1.
+signal(): when a thread exits critical section, it call signal(). It increases the counterValue by 1.
+
+- a thread can access critical section only when counterValue is non-negative value, after calling the wait() function. 
+- counterValue tells how many threads can access critical Section at once.
+
+
+//code for Dispatch Semaphore
+let's take same example as above
+
+let semaphore: DispatchSemaphore = DispatchSemaphore(value: 1)
+
+func didBuyBoth() {
+    for product in products {
+        purchaseQueue.async {
+            self.buyItem(product: product);
+        }
+    }
+}
+
+func buyItem(product: Product) {
+    semaphore.wait()
+    if self.walletBalance > product.price {
+        //make network call to buy the product and update the wallet balance
+        walletBalance -= product.price
+        semaphore.signal()
+    } else {
+        print("show other payment option")
+        semaphore.signal()
+    }
+}
+
+
+- Using semaphores, we avoided race condition in this case. 
+- Semaphores are easy to use.
+
+
+
+till now, GCD has been covered well.
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Operation & OperationQueue:
+
+Multithreading can be achieved by GCD or OperationQueue.
+OperationQueue was introduced in swift 5.5, a more modern way to handle multithreading.
+But GCD is more popular among developer becuase of it's existence for longer time and code on internet is easily available for this.
+
+
+OperationQueue is just an object oriented wrapper over GCD. That's why it has all the features of GCD with some extra added functionality as well.
+
+
+
+GCD vs OperationQueue
+
+- when we use GCD, we don't have control over our operations, atMax we can cancel any operation using workItem. But in OperationQueue, we can pause,resume, cancel any task.
+- Dependent task mangement is more easy and convenient with OperationQueue.
+- OperationQueue is KVC and KVO complaint, that means we can observe the state of a operation at any point of time. Properties which are exposed for a operation are following
+    - isCancelled
+    - isAsynchronous
+    - isExecuting
+    - isFinished
+    - isReady
+    - dependencies
+    - queuePriority
+    - completionBlock
+- We can take actions in our app depending on these states.
+- We can set how many task can be run concurrently in OperationQueue. But apple recommends not to set it, as OperationQueue internally do this calculation by deafult, based on no. of cores in the phone and how system is busy.
+
+- If task is simple & we don't want any control over it, GCD is best. But if we want extreme control over tasks and there are dependency among tasks then OperationQueue is best.
+
+Simple Task: use GCD
+Control + dependency: use OperationQueue
+
+
+
+
+What is operation?
+- An abstract class that represents the code and data associated with a single task.
+- Swift doesn't support abstraction, here abstract is used just to tell that you can't make objects of operation directly, it must be used as a base class.
+- Apple has made BlockOperation whose base class is operation. We should use this to execute tasks.
+- BlockOperation: An operation that manages the concurrent execution of one or more blocks.
+- blocks of an operation executed concurrently but code inside one block is executed serially.
+
+
+//code for operation
+
+struct Example {
+
+    func doWork() {
+        let blockOperation = BlockOperation()
+        blockOperation.qualityOfService = .utility
+
+        blockOperation.addExecutionBlock {
+            print("Hello")
+        }
+
+        blockOperation.addExecutionBlock {
+            print("My name is")
+        }
+
+        blockOperation.addExecutionBlock {
+            print("Deepak")
+        }
+
+        blockOperation.start()
+
+        /* code inside an execution block runs serially but all the execution blocks of an operation runs concurrently */
+    }
+
+ }
+
+ let obj = Example()
+ obj.doWork()
+
+//output of this function: (it is because all the execution block runs concurrently)
+My name is
+Hello
+Deepak
+
+
+
+//code for operationQueue
+
+we can start operation as shown above by calling .start() function. But it is recommended to use operationQueue to start operations. Once you add an operation object to a queue, the queue assumes all responsibility for it. so it is better to use operationQueue.
+
+- we can add multiple operations in a operationQueue.
+- To make operationQueue serial(by default it is concurrent), we can set maxConcurrentOperationCount to 1.
+- we can execute tasks serially in operationQueue, by adding dependency between operations. 
+    eg. blockOperation1.addDependency(blockOperation2) -> means don't start blockOperation1 until blockOperation2 is finished.
+
+
+struct Example {
+
+    func doWork() {
+        let blockOperation = BlockOperation()
+
+        blockOperation.completionBlock = {
+            print("blockOperation completed")
+        } /* this will be called when this operation is finished executing */
+
+        blockOperation.addExecutionBlock {
+            print("Hello")
+        }
+
+        blockOperation.addExecutionBlock {
+            print("My name is")
+        }
+
+        blockOperation.addExecutionBlock {
+            print("Deepak")
+        }
+
+        let anotherBlockOperation = BlockOperation()
+        anotherBlockOperation.addExecutionBlock {
+            print("I am another block operation")
+        }
+
+        let anotherBlockOperation2 = BlockOperation()
+        anotherBlockOperation.addExecutionBlock {
+            print("I am another block operation2")
+        }
+
+
+        let operationQueue = OperationQueue()
+        operationQueue.qualityOfService = .utility 
+        /*it is good practice to not assign QoS to operations while using operationQueue. and assign QoS to queue itself */
+
+        blockOperation.addDependency(anotherBlockOperation) /* with this code, blockOperation will start only after anotherBlockOperation is finished. If we will not add this, both operations would have been executed concurrently*/
+
+        operationQueue.addOperation(blockOperation)
+        operationQueue.addOperation(anotherBlockOperation)
+
+        operationQueue.addBarrierBlock {
+            print("All operations added till now in the queue have completed.")
+        }
+        /* 
+            This barrier block will:
+            Wait until all previously added operations have completed.
+            Then run the block that prints: "All operations added till now in the queue have completed."
+            No operations added after the barrier block will run until this block completes.
+            - It doesn't make anything synchronous, rather it just create a barrier among operations added before and after the barrier block.
+        */
+
+        operationQueue.addOperation(anotherBlockOperation2)
+
+    }
+
+ }
+
+ let obj = Example()
+ obj.doWork()
+
+
+//output of this will be:
+I am another block operation
+My name is
+Hello
+Deepak
+blockOperation completed
+All operations added till now in the queue have completed.
+I am another block operation2
+
+
+
+
+
+Custom Operation:
+-we can also create custom Operation subclasses for more complex logic
+
+//code to create it
+
+class CustomOperation: Operation {
+    override func main() {
+        if isCancelled { return } // Check for cancellation
+        print("Custom Operation started on thread: \(Thread.current)")
+        Thread.sleep(forTimeInterval: 3) // Simulate work
+        print("Custom Operation finished")
+    }
+}
+let customOperation = CustomOperation()
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+MainActor:
+It is just a decorator which is equivalent to running the code block on main thread. It was introduced just to make the code cleaner nothing else.
+
+@MainActor
+func updateUI() {
+    //ui updates
+}
+
+by adding the annotator, this code block will run on main thread.
+
+
+
+async await:
+- it is there to solve problem of multiple serial api calls or serial api dependency
+- serial api calls require nested closures and it's results are returned through @escaping closures, all of this got fixed with async await. With this @escaping closure is removed and nesting is also removed.
+- with this our code size decreases and code readability increases
+
+Problems with existing approaches:
+- with too many nesting, pyramid of doom gets created
+- in multiple nested loops, developer can forgot to use weak self, which can lead to memory leaks.
+- Too much of nesting, is hard to read and hard to maintain, hard to debug as well
+
+
+- we can't call an async function from a non-async function. We can use Task{} to do so and call the async function from inside of it.
+
+
+why async await was introduced?
+async/await vs (DispatchQueue, DispatchGroup, OperationQueue)
+
+
+
+
+async syntax:
+
+/* this is signature of an api call, with eascaping closure */
+func getPayRoll(completionHandler: @escaping(_ result: EmployeePayroll)->Void)
+
+/* with async syntax, it can be reduced to this  */
+func getPayRoll() async throws -> EmployeePayroll  // use throw if we want throw error, if it occurs
+func getPayRoll() async -> EmployeePayroll
+
+
+await syntax:
+
+do {
+    let result = try await getPayRoll()
+    /* we are using try because function throws. and we can't call an async function without using await syntax. */
+} catch {
+    print(error)
+}
+
