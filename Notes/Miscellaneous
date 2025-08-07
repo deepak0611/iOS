@@ -138,3 +138,17 @@ Notes:
 - Extensions must respect the access level of the original type unless redefined.
 
 
+
+
+////////////////////////////////////////////////////////////////////////////////////
+What is Method Dispatch?
+Method Dispatch = How Swift figures out what function to call
+Purpose:
+Determine which method to call when multiple implementations exist (e.g., inheritance, overriding, polymorphism).
+
+
+| Dispatch Type        | Used By                   | When Resolved             | Performance | Overridable |
+| -------------------- | ------------------------- | ------------------------- | ----------- | ----------- |
+| **Static Dispatch**  | Structs, final methods    | Compile-time              | ✅ Fastest   | ❌ No        |
+| **Table Dispatch**   | Default for class methods | Runtime (vtable)          | ✅ Fast      | ✅ Yes       |
+| **Dynamic Dispatch** | `@objc`, `dynamic`, KVO   | Runtime (message passing) | ❌ Slower    | ✅ Yes       |

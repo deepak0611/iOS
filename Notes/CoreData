@@ -306,15 +306,6 @@ Pagination in CoreData:
 
 
 
-
-
-
-
-
-
-
-
-
 ////////////////
 File Manager in iOS:
 - FileManager lets us read, write, and manage files and directories in our app’s sandboxed file system.

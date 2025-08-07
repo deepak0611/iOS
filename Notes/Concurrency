@@ -398,7 +398,7 @@ Class SplashScreen: UIViewController {
 }
 
 
-- so basically, we are keeping the network call code block inside the workItem. whenever user types some text in userName textField, we are calling the checkUserNameAvailability function which is making network call, we don't want to make unneccessary network calls. So whenever text is changing, firstly we are cancelling the previous workItem, so it won't be executed, and at the same time we are updating it with new workItem, with new string. If the workItem is on cancelled, it will get executed after 1 second. so when user stops typing, after one second user will get the response of workItem.
+- so basically, we are keeping the network call code block inside the workItem. whenever user types some text in userName textField, we are calling the checkUserNameAvailability function which is making network call, we don't want to make unneccessary network calls. So whenever text is changing, firstly we are cancelling the previous workItem, so it won't be executed, and at the same time we are updating it with new workItem, with new string. If the workItem is not cancelled, it will get executed after 1 second. so when user stops typing, after one second user will get the response of workItem.
 
 
 
