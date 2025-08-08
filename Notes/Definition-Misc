@@ -1,5 +1,6 @@
 - final Keyword: The final keyword prevents a class, method, or property from being overridden or subclassed.
 
+/////////////////
 - AnyObject: 
 	- AnyObject is a protocol that represents any class type (not struct or enum). 
 	- It's often used in: Protocol constraints, Collections of heterogeneous objects.
@@ -16,7 +17,7 @@ protocol Named: AnyObject {
 
 This says: Only class types can conform to Named, not struct or enum.
 
-
+///////////////////
 - @viewBuilder modifier in swiftui: It flattens block of views into a single view using Group wrapper internaly.
 
 //exmaple
@@ -31,3 +32,69 @@ func myView() -> some View {
 	Text("Hello")
     Text("World") 
 }
+
+///////////////
+static vs class keyword:
+
+- static in Swift:
+    - Applies to all types (classes, structs, enums)
+    - Cannot be overridden in subclasses
+    - Defines type properties or methods that are fixed and not polymorphic
+
+    struct MathUtils {
+        static func add(a: Int, b: Int) -> Int {
+            return a + b
+        }
+    }
+
+    let result = MathUtils.add(a: 2, b: 3)  // 5
+
+- class in Swift
+    - Only for classes
+    - Used to define type-level methods or properties
+    - Can be overridden in subclasses
+    - Useful for polymorphic behavior
+
+    class Animal {
+        class func sound() -> String {
+            return "Some sound"
+        }
+    }
+
+    class Dog: Animal {
+        override class func sound() -> String {
+            return "Bark"
+        }
+    }
+
+    print(Dog.sound())  // "Bark"
+
+
+| Keyword  | Applies to              | Can be overridden? | Use case                          |
+| -------- | ----------------------- | ------------------ | --------------------------------- |
+| `static` | Classes, Structs, Enums | ❌ No               | Constants, helpers, utility logic |
+| `class`  | Only Classes            | ✅ Yes              | Type methods with polymorphism    |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
