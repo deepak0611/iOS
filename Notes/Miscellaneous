@@ -99,7 +99,7 @@ AppDelegate (if it implements the method)
 
 //example
 three views are there, v1, v2, v3.
-FrameOf(v1) > FrameOf(v2) > FrameOf(v2)
+FrameOf(v1) > FrameOf(v2) > FrameOf(v3)
 v1.addSubView(v2)
 v2.addSubView(v3)
 

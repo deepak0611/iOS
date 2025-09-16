@@ -188,7 +188,7 @@ view.layer.addSublayer(shapeLayer)
 let animation = CABasicAnimation(keyPath: "strokeEnd")
 animation.toValue = 1
 animation.duration = 3
-shape.add(animation, forKey: "animation")
+shapeLayer.add(animation, forKey: "animation")
 
 
 

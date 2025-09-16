@@ -117,10 +117,12 @@ class ViewController: UIViewController {
 		NotificationCenter.default.addObserver(self, selector: #selector(updateDarkText(notification:)), name: light, object: nil)
 	}
 
+	@objc
 	func updateLightText(notification: NSNotification) {
 		uiLabelText = "light"
 	}
 
+	@objc
 	func updateDarkText(notification: NSNotification) {
 		uiLabelText = "dark"
 	}
